@@ -1,14 +1,8 @@
-package uglynum;
-
 import java.util.Scanner;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.*;
-public class  UglyNum{
-    /**
-     * @param args the command line arguments
-     */
-    
+public class  Main{
     //Read the input file and pass values to evaluate
     public static void readFile(String file){
         Scanner sc;
@@ -32,47 +26,65 @@ public class  UglyNum{
             int [] operators = new int [x.length()-1];      //Array to store key for operator 0: No operator/combine 1: Add 2: Subtract
             int [] digits = new int[x.length()];            //Array of digits in number
             int numUgly=0;
-                int cacheKey=0;
             for(int i = 0; i < digits.length;i++){
                 digits[i]= Integer.parseInt(x.substring(i,i+1));
                 if(i<operators.length){operators[i]=0;}
             }         //Stores values to ensure no repeats
             
-            int [] cache = new int [(int)Math.pow(3,digits.length-1)]; 
+            
+            List<Integer> cache = new ArrayList<Integer>(); 
             for(int i = 0; i<Math.pow(3,digits.length-1);i++){
-                int res = digits[0];
-                for(int j = 0; j<digits.length-1; j++){
-                    res = operate(res, digits[j+1], operators[j]);
-                }
-                boolean flag = true;
-                for(int c : cache){
-                    if(res == c){flag = false;
+                int res=0;
+                int firstVal;
+                if(operators.length==0){res=digits[0];}
+                for(int j = 0; j<operators.length; j++){
+                    firstVal = res;
+                    //Check if first number is more than 1 digit
+                    if(j==0){
+                        firstVal = digits[0];
+                        while(j<operators.length && operators[j]==0){
+                            firstVal=operate(firstVal, digits[j+1],operators[j]);
+                            j++;
+                        }
+                    }
+                    
+                    //Get outta here if the first val is the entire number string
+                    if(j==operators.length){res = firstVal; break;}
+                    
+                    //Check if the second number to operate on is more than 1 digit
+                    int secondVal = digits[j+1];
+                    if(operators[j]!=0){
+                        if(j<operators.length-1 && operators[j+1]==0){
+                            for( int y = j; y<operators.length-1 && operators[y+1]==0; y++){
+                                secondVal = operate(secondVal,digits[y+2],operators[y+1]);
+                            }
+                        }
+                    res=operate(firstVal,secondVal,operators[j]);
                     }
                 }
                 
-                if(uglyCheck(res) && flag){numUgly++; cache[cacheKey]=res; cacheKey++;}
+                cache.add(res);
                 //Change operator for next permutation
-                boolean change = true;
                 int key = 0;
-                while(change && key < operators.length){
+                while(key < operators.length){
                     operators[key]++;
                     if(operators[key]==3){
                         operators[key]=0;
                     }
-                    else{change = false;}
+                    else{break;}
                     key++;
                 }
-                for(int b = 0; b<cache.length; b++){cache[b]=0;}
             }
+            
+            for(int c : cache){if(uglyCheck(c)){numUgly++;}}
             System.out.println(numUgly);
-            numUgly=0;
         }
     }
-    
     public static int operate(int d1,int d2,int op){
         int result=0; 
         switch(op){
-            case 0: result = 10*d1+d2;
+            case 0: if(d1>=0){result = 10*d1+d2;}
+                    else{result = 10*d1 - d2;}
                     break;
             case 1: result = d1+d2;
                     break;
